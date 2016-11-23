@@ -3,18 +3,21 @@
 import requests
 from lxml import html
 
-class Parser:
-    DATA = {'action':'get_schedules',
-        'from':'',
-        'to':''}
+class Parser(object):
 
+    """parser class have 2 func:
+    1. get_iata
+    2. get_data
+    """
+
+    DATA = {'action':'get_schedules', 'from':'', 'to':''}
     URL = 'http://www.pobeda.aero/services/flight_schedule'
-    session = requests.session()
 
+    session = requests.session()
 
     def get_iata(self):
 
-
+        """get IATA codes from started page"""
 
         first_page = requests.get(self.URL).content.decode('utf-8')
 
@@ -26,12 +29,14 @@ class Parser:
 
     def get_data(self):
 
+        """get data from page"""
+
         for iata in self.get_iata():
             self.DATA['from'] = iata
 
-            r = requests.post(self.URL, data=self.DATA).content
+            response = requests.post(self.URL, data=self.DATA).content
 
-            page = html.fromstring(r.decode('utf-8'))
+            page = html.fromstring(response.decode('utf-8'))
 
             table = page.xpath('//div[@class="schedule-table__wrapper"]')
 
@@ -42,12 +47,13 @@ class Parser:
                 body = i.xpath('.//table[@class="schedule-table"]//tr')[1:]
                 for i in body:
                     row = i.xpath('.//td/text()')
-                    print u'First flight: {}   |   Last flight: {}   |   Weekdays: {}'.format(row[1], row[2], row[3])
+                    print u'First flight: {}   |' \
+                          u'   Last flight: {}   |' \
+                          u'   Weekdays: {}'.format(row[1], row[2], row[3])
                 print ''
 
 
 
 if __name__ == "__main__":
-    q = Parser()
-    q.get_data()
-
+    E_1 = Parser()
+    E_1.get_data()
