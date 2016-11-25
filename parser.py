@@ -31,7 +31,8 @@ class Parser(object):
 
         if self.return_date == '':
             self.return_date = self.outbound_date
-        else: self.return_date = '-'.join(self.return_date.split('.')[::-1])
+        else: 
+            self.return_date = '-'.join(self.return_date.split('.')[::-1])
 
         session = requests.session()
 
@@ -94,19 +95,22 @@ class Parser(object):
                                     '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
             if base_plase == []:
                 base_plase = "-"
-            else: base_plase = ''.join(base_plase)
+            else: 
+                base_plase = ''.join(base_plase)
 
             comf_plase = data.xpath('.//label[contains(@id, "priceLabelIdCOMFFi_")]'
                                     '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
             if comf_plase == []:
                 comf_plase = "-"
-            else: comf_plase = ''.join(comf_plase)
+            else: 
+                comf_plase = ''.join(comf_plase)
 
             prem_plase = data.xpath('.//label[contains(@id, "priceLabelIdPREMFi_")]'
                                     '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
             if prem_plase == []:
                 prem_plase = "-"
-            else: prem_plase = ''.join(prem_plase)
+            else: 
+                prem_plase = ''.join(prem_plase)
 
             flex_prise = data.xpath('.//label[contains(@id, "priceLabelIdFLEXFi_")]'
                                     '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
@@ -114,7 +118,8 @@ class Parser(object):
                 flex_prise = ' - '
             elif len(flex_prise) == 2:
                 flex_prise = ' - '.join(flex_prise)
-            else: flex_prise = ''.join(flex_prise)
+            else: 
+                flex_prise = ''.join(flex_prise)
 
             print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format(start_end, flight_time,
                                                                 base_plase, comf_plase,
