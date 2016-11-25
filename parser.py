@@ -27,8 +27,11 @@ class Parser(object):
         get html file
         """
 
+        self.outbound_date = '-'.join(self.outbound_date.split('.')[::-1])
+
         if self.return_date == '':
             self.return_date = self.outbound_date
+        else: self.return_date = '-'.join(self.return_date.split('.')[::-1])
 
         session = requests.session()
 
@@ -123,7 +126,7 @@ class Parser(object):
 
 
 if __name__ == '__main__':
-    E_1 = Parser('dme', 'prg', '2016-11-22')
-    E_2 = Parser('dxb', 'prg', '2016-11-24', '2016-11-29')
+    E_1 = Parser('dme', 'prg', '28.11.2016')
+    E_2 = Parser('dxb', 'prg', '2016-11-27', '2016-11-30')
     E_1.find_data()
     E_2.find_data()
