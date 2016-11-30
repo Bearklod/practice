@@ -1,11 +1,11 @@
 #-*- coding: utf-8 -*-;
-"""Interactive rarser for site: /www.flyniki.com/.
+"""Parser for site: /www.flyniki.com/.
 Parser() -- main class
 MyIOError -- exception (class) raised when Parser inserted wrong data
 """
 
-from lxml import html
 import requests
+from lxml import html
 
 class Parser(object):
 
@@ -15,6 +15,7 @@ class Parser(object):
     departure -- IATA code.
     destination -- IATA code.
     outbound_date -- departure date (day.month.year  or year-month-day).
+    if the day or month are less than 10, then put a '0' in front like '01'
     return_date -- (default '').
     Functions:
     __init__
@@ -39,12 +40,12 @@ class Parser(object):
         """
         This func check data format and return html page from final request: set_ajax()
         """
-        self.outbound_date = '-'.join(self.outbound_date.split('.')[::-1])
+        self.outbound_date = self.date_error_checker(self.outbound_date)
         if self.return_date == '':
             self.oneway = 1
             self.return_date = self.outbound_date
         else:
-            self.return_date = '-'.join(self.return_date.split('.')[::-1])
+            self.return_date = self.date_error_checker(self.return_date)
         return self.set_ajax()
 
     def get_full_url(self):
@@ -89,53 +90,55 @@ class Parser(object):
         response = self.SESSION.post(self.get_full_url().url, data=data)
         return response.content.replace('\\', '')
 
+    def check_for_errors(self, page):
+        errors = page.xpath('//span[@class="debugerrors"]/text()')
+        if errors:
+            raise Exception('Wrong ' + errors[0][1:-1] + '. Please correct your entry.')
+
+    def date_error_checker(self, date):
+        lst = date.split('.')[::-1]
+        if int(lst[0]) < 2016 or int(lst[0]) > 2017 \
+                or int(lst[1]) > 12 or int(lst[1]) < 1 \
+                or int(lst[2]) > 31 or int(lst[2]) < 1:
+            raise Exception('date out of range')
+        return '-'.join(lst)
+
     def find_data(self):
         """ This func find data in html page."""
         page = html.fromstring(self.get_page())
-        try:
-            errors = page.xpath('//span[@class="debugerrors"]/text()')
-            if errors != []:
-                raise MyIOError()
-        except MyIOError:
-            print 'Wrong ' + errors[0][1:-1] + '. Please correct your entry.'
-        else:
-            tables = page.xpath('//div[@id="flighttables"]'
-                                '[@class="clearfix"]/div')
-            tables = tables[::2] if not self.oneway else tables[::3]
-            for table in tables:
-                row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
-                print table.xpath('.//div[@class="vacancy_route"]/text()')[0]
-                print '-'*120
-                print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format('start_end',
-                                                                    'flight_time',
-                                                                    'basePlase EUR',
-                                                                    'comf_plase EUR',
-                                                                    'prem_plase EUR',
-                                                                    'flexPrise EUR')
-                print '-'*118
-                for data in row:
-                    start_end = ' - '.join(data.xpath('.//time/text()'))
-                    flight_time = data.xpath('.//span[contains(@id, "flightDurationFi_")]/text()')[0]
-                    base_plase = data.xpath('.//label[contains(@id, "priceLabelIdBASEFi_")]'
-                                            '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                    base_plase = "-" if not base_plase else ''.join(base_plase)
-                    comf_plase = data.xpath('.//label[contains(@id, "priceLabelIdCOMFFi_")]'
-                                            '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                    comf_plase = "-" if not comf_plase else ''.join(comf_plase)
-                    prem_plase = data.xpath('.//label[contains(@id, "priceLabelIdPREMFi_")]'
-                                            '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                    prem_plase = "-" if not prem_plase else ''.join(prem_plase)
-                    flex_prise = data.xpath('.//label[contains(@id, "priceLabelIdFLEXFi_")]'
-                                            '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                    flex_prise = ' - ' if not flex_prise else ' - '.join(flex_prise)
-                    print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format(start_end, flight_time,
-                                                                        base_plase, comf_plase,
-                                                                        prem_plase, flex_prise)
-                print '-' * 120
-
-
-class MyIOError(Exception):
-    pass
+        self.check_for_errors(page)
+        tables = page.xpath('//div[@id="flighttables"][@class="clearfix"]/div')
+        tables = tables[::2] if not self.oneway else tables[::3]
+        for table in tables:
+            row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
+            print table.xpath('.//div[@class="vacancy_route"]/text()')[0]
+            print '-' * 120
+            print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format('start_end',
+                                                                'flight_time',
+                                                                'basePlase EUR',
+                                                                'comf_plase EUR',
+                                                                'prem_plase EUR',
+                                                                'flexPrise EUR')
+            print '-' * 120
+            for data in row:
+                start_end = ' - '.join(data.xpath('.//time/text()'))
+                flight_time = data.xpath('.//span[contains(@id, "flightDurationFi_")]/text()')[0]
+                base_plase = data.xpath('.//label[contains(@id, "priceLabelIdBASEFi_")]'
+                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
+                base_plase = "-" if not base_plase else ''.join(base_plase)
+                comf_plase = data.xpath('.//label[contains(@id, "priceLabelIdCOMFFi_")]'
+                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
+                comf_plase = "-" if not comf_plase else ''.join(comf_plase)
+                prem_plase = data.xpath('.//label[contains(@id, "priceLabelIdPREMFi_")]'
+                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
+                prem_plase = "-" if not prem_plase else ''.join(prem_plase)
+                flex_prise = data.xpath('.//label[contains(@id, "priceLabelIdFLEXFi_")]'
+                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
+                flex_prise = ' - ' if not flex_prise else ' - '.join(flex_prise)
+                print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format(start_end, flight_time,
+                                                                    base_plase, comf_plase,
+                                                                    prem_plase, flex_prise)
+            print '-' * 120
 
 
 if __name__ == '__main__':
