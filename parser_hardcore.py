@@ -158,9 +158,7 @@ class Parser(object):
         This method get each value of the first table and inserts
         for each value of the second table.
         """
-        self.get_page()
-        print self.oneway
-        if self.oneway:
+        if not self.return_date:
             raise Exception('return data not found')
         page = html.fromstring(self.get_page())
         self.check_for_errors(page)
@@ -195,5 +193,5 @@ class Parser(object):
 
 
 if __name__ == '__main__':
-    E_1 = Parser('dxb', 'prg', '01.12.2016', '04.12.2016')
+    E_1 = Parser('dxb', 'prg', '02.12.2016', '04.12.2016')
     E_1.all_price()
