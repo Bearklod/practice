@@ -61,7 +61,9 @@ class Parser(object):
                   'adultCount': '1',
                   'childCount': '0',
                   'infantCount': '0'}
-        return self.SESSION.get(url, params=params)
+        cookies = {'remember' : '0%3Bru%3BRU'}
+        response = self.SESSION.get(url, params=params, cookies=cookies)
+        return response
 
     def get_sesid(self):
         """Return url for final request snd session ID into SESSION"""
@@ -111,14 +113,13 @@ class Parser(object):
         for table in tables:
             row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
             print table.xpath('.//div[@class="vacancy_route"]/text()')[0]
-            print '-' * 120
-            print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format('start_end',
-                                                                'flight_time',
-                                                                'basePlase EUR',
-                                                                'comf_plase EUR',
-                                                                'prem_plase EUR',
-                                                                'flexPrise EUR')
-            print '-' * 120
+            print '-' * 137
+            print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format(
+                                                                'start_end','flight_time',
+                                                                'basePlase rub', 'comf_plase rub',
+                                                                'prem_plase rub', 'eco_flex rub',
+                                                                'bus_flex rub')
+            print '-' * 137
             for data in row:
                 start_end = ' - '.join(data.xpath('.//time/text()'))
                 flight_time = data.xpath('.//span[contains(@id, "flightDurationFi_")]/text()')[0]
@@ -131,13 +132,15 @@ class Parser(object):
                 prem_plase = data.xpath('.//label[contains(@id, "priceLabelIdPREMFi_")]'
                                         '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
                 prem_plase = "-" if not prem_plase else ''.join(prem_plase)
-                flex_prise = data.xpath('.//label[contains(@id, "priceLabelIdFLEXFi_")]'
-                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                flex_prise = ' - ' if not flex_prise else ' - '.join(flex_prise)
-                print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format(start_end, flight_time,
+                eco_flex = data.xpath('.//td[contains(@class, "ECO FLEX")]//span[contains(@id, "price")]/text()')
+                eco_flex = '- 'if not eco_flex else eco_flex[0]
+                bus_flex = data.xpath('.//td[contains(@class, "BUS_FLEX")]//span[contains(@id, "price")]/text()')
+                bus_flex = '-' if not bus_flex else bus_flex[0]
+                print '{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}{:^20}'.format(start_end, flight_time,
                                                                     base_plase, comf_plase,
-                                                                    prem_plase, flex_prise)
-            print '-' * 120
+                                                                    prem_plase, eco_flex, bus_flex)
+            print '-' * 137
+
 
 
 if __name__ == '__main__':
