@@ -6,6 +6,7 @@ This modul receives flights table and returns data for all flights
 
 import requests
 from lxml import html
+from datetime import date as dt
 
 class Parser(object):
 
@@ -101,15 +102,20 @@ class Parser(object):
 
     def date_error_checker(self, date):
     	"""This func check the date on the error and return correct one for request"""
+        today = str(dt.today()).split('-')
         lst = date.split('.')[::-1]
         if len(lst) == 1:
             return lst[0]
-        elif len(lst[2]) == 1:
-            lst[2] = '0' + str(lst[2])
-        elif int(lst[0]) < 2016 or int(lst[0]) > 2017 \
+        elif int(lst[2]) < int(today[2]) \
+                or int(lst[1]) < int(today[1]) \
+                and int(lst[0]) <= int(today[0]):
+            raise Exception("You enter wrong date. We can't return back")
+        if int(lst[0]) < 2016 or int(lst[0]) > 2017 \
                 or int(lst[1]) > 12 or int(lst[1]) < 1 \
                 or int(lst[2]) > 31 or int(lst[2]) < 1:
             raise Exception('date out of range')
+        elif len(lst[2]) == 1:
+            lst[2] = '0' + str(lst[2])
         return '-'.join(lst)
 
     def find_data(self):
@@ -178,7 +184,7 @@ class Parser(object):
 
 
 if __name__ == '__main__':
-    E_1 = Parser('dxb', 'prg', '2.12.2016', '04.12.2016')
+    E_1 = Parser('dxb', 'prg', '5.12.2016', '8.12.2016')
     E_1.find_data()
     E_1.all_price()
 
