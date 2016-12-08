@@ -102,13 +102,13 @@ class Parser(object):
 
     def date_error_checker(self, date):
     	"""This func check the date on the error and return correct one for request"""
-        today = str(dt.today()).split('-')
+        today = dt.today()
         lst = date.split('.')[::-1]
         if len(lst) == 1:
             return lst[0]
-        elif int(lst[2]) < int(today[2]) \
-                or int(lst[1]) < int(today[1]) \
-                and int(lst[0]) <= int(today[0]):
+        elif int(lst[2]) < int(today.strftime("%d")) \
+                or int(lst[1]) < int(today.strftime("%m")) \
+                and int(lst[0]) <= int(today.strftime("%y")):
             raise Exception("You enter wrong date. We can't return back")
         if int(lst[0]) < 2016 or int(lst[0]) > 2017 \
                 or int(lst[1]) > 12 or int(lst[1]) < 1 \
@@ -127,35 +127,13 @@ class Parser(object):
         for table in tables:
             row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
             print table.xpath('.//div[@class="vacancy_route"]/text()')[0]
-            print '-' * 120
-            print '{:^15}{:^15}{:^15}{:^15}{:^15}{:^15}{:^15}{:^15}'.format(
-                                                                'start_end','flight_time',
-                                                                'basePlase rub', 'comf_plase rub',
-                                                                'prem_plase rub', 'eco_saver rub',
-                                                                'eco_flex rub', 'bus_flex rub')
-            print '-' * 120
             for data in row:
                 start_end = ' - '.join(data.xpath('.//time/text()'))
                 flight_time = data.xpath('.//span[contains(@id, "flightDurationFi_")]/text()')[0]
-                base_plase = data.xpath('.//label[contains(@id, "priceLabelIdBASEFi_")]'
-                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                base_plase = ' - ' if not base_plase else ''.join(base_plase)
-                comf_plase = data.xpath('.//label[contains(@id, "priceLabelIdCOMFFi_")]'
-                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                comf_plase = ' - ' if not comf_plase else ''.join(comf_plase)
-                prem_plase = data.xpath('.//label[contains(@id, "priceLabelIdPREMFi_")]'
-                                        '/div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                prem_plase = ' - ' if not prem_plase else ''.join(prem_plase)
-                eco_flex = data.xpath('.//td[contains(@class, "ECO FLEX")]//span[contains(@id, "price")]/text()')
-                eco_flex = ' - ' if not eco_flex else eco_flex[0]
-                eco_saver = data.xpath('.//td[contains(@class, "ECO_SAVER")]//span[contains(@id, "price")]/text()')
-                eco_saver = ' - ' if not eco_saver else eco_saver[0]
-                bus_flex = data.xpath('.//td[contains(@class, "BUS_FLEX")]//span[contains(@id, "price")]/text()')
-                bus_flex = ' - ' if not bus_flex else bus_flex[0]
-                print '{:^15}{:^15}{:^15}{:^15}{:^15}{:^15}{:^15}{:^15}'.format(start_end, flight_time,
-                                                                    base_plase, comf_plase,
-                                                                    prem_plase, eco_saver, eco_flex, bus_flex)
-            print '-' * 120
+                price = (data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()'))
+                price.append('')
+                print start_end, flight_time, ' rub.  '.join(price)
+            print ''
 
     def all_price(self):
         """ all_price()
@@ -184,7 +162,7 @@ class Parser(object):
 
 
 if __name__ == '__main__':
-    E_1 = Parser('dxb', 'prg', '5.12.2016', '8.12.2016')
+    E_1 = Parser('dxb', 'prg', '9.12.2016', '12.12.2016')
     E_1.find_data()
     E_1.all_price()
 
