@@ -6,7 +6,7 @@ This modul receives flights table and returns data for all flights
 
 import requests
 from lxml import html
-from datetime import date as dt
+from datetime import datetime
 
 class Parser(object):
 
@@ -37,10 +37,6 @@ class Parser(object):
         self.outbound_date = str(raw_input('Departure date: '))
         self.return_date = str(raw_input('Return date: '))
 
-    def first_request(self):
-        url = 'https://www.flyniki.com/en-RU/start.php'
-        return self.SESSION.get(url)
-
     def get_page(self):
         """
         This func check data format and return html page from final request: set_ajax()
@@ -57,7 +53,6 @@ class Parser(object):
         """
         hit func makes first get request with params to www.flyniki.com
         """
-        self.first_request()
         url = 'http://www.flyniki.com/en/booking/flight/vacancy.php?'
         params = {'departure': self.departure,
                   'destination': self.destination,
@@ -101,23 +96,18 @@ class Parser(object):
         if errors:
             raise Exception('Wrong ' + errors[0][1:-1] + '. Please correct your entry.')
 
-    def date_error_checker(self, date):
+    def date_error_checker(self, data):
     	"""This func check the date on the error and return correct one for request"""
-        today = dt.today()
-        lst = date.split('.')[::-1]
-        if len(lst) == 1:
-            return lst[0]
-        elif int(lst[2]) < int(today.strftime("%d")) \
-                or int(lst[1]) < int(today.strftime("%m")) \
-                and int(lst[0]) <= int(today.strftime("%y")):
+        if len(data.split('.')) == 1:
+            return data
+        flight_date = datetime.strptime(data, '%d.%m.%Y')
+        today = datetime.today()
+        if flight_date.date() < today.date():
             raise Exception("You enter wrong date. We can't return back")
-        if int(lst[0]) < 2016 or int(lst[0]) > 2017 \
-                or int(lst[1]) > 12 or int(lst[1]) < 1 \
-                or int(lst[2]) > 31 or int(lst[2]) < 1:
-            raise Exception('date out of range')
-        elif len(lst[2]) == 1:
-            lst[2] = '0' + str(lst[2])
-        return '-'.join(lst)
+        if int(flight_date.strftime('%Y')) < 2016 or \
+                        int(flight_date.strftime('%Y')) > 2017:
+            raise Exception("Wrong date!")
+        return str(flight_date.date())
 
     def find_data(self):
         """ This func find data in html page."""
@@ -133,7 +123,7 @@ class Parser(object):
                 flight_time = data.xpath('.//span[contains(@id, "flightDurationFi_")]/text()')[0]
                 price = (data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()'))
                 price.append('')
-                print start_end, flight_time, ' rub.  '.join(price)
+                print start_end, flight_time, ' gbp.  '.join(price)
             print ''
 
     def all_price(self):
@@ -159,7 +149,7 @@ class Parser(object):
                     for second_prices in s_prices:
                         end = ' - '.join(data.xpath('.//time/text()'))
                         tooal_price = int(''.join(first_price[:-3].split(','))) + int(''.join(second_prices[:-3].split(',')))
-                        print '{}  ---  {}  |  {:>8,}.00 rub'.format(start, end, tooal_price)
+                        print '{}  ---  {}  |  {:>8,}.00 gbp'.format(start, end, tooal_price)
 
 
 if __name__ == '__main__':
