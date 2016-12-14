@@ -117,7 +117,7 @@ class Parser(object):
         self.check_for_errors(page)
         tables = page.xpath('//div[@id="flighttables"][@class="clearfix"]/div')
         tables = tables[::2] if not self.oneway else tables[::3]
-        value = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
+        currency = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
         for table in tables:
             row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
             print table.xpath('.//div[@class="vacancy_route"]/text()')[0]
@@ -125,7 +125,7 @@ class Parser(object):
                 start_end = ' - '.join(data.xpath('.//time/text()'))
                 flight_time = data.xpath('.//span[contains(@id, "flightDurationFi_")]/text()')[0]
                 price = (data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()'))
-                print start_end, flight_time, ' - '.join(price), value
+                print start_end, flight_time, ' - '.join(price), currency
             print ''
 
     def all_price(self):
@@ -141,7 +141,7 @@ class Parser(object):
         tables = page.xpath('//div[@id="flighttables"][@class="clearfix"]/div')[::2]
         row_first_table = tables[0].xpath('.//tbody/tr[contains(@class, "flightrow")]')
         row_second_table = tables[1].xpath('.//tbody/tr[contains(@class, "flightrow")]')
-        value = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
+        currency = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
         for data in row_first_table:
             f_prices = data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()')
             for first_price in f_prices:
@@ -151,7 +151,7 @@ class Parser(object):
                     for second_prices in s_prices:
                         end = ' - '.join(data.xpath('.//time/text()'))
                         tooal_price = int(''.join(first_price[:-3].split(','))) + int(''.join(second_prices[:-3].split(',')))
-                        print u'{}  ---  {}  |  {:>8,}.00 {}'.format(start, end, tooal_price, value)
+                        print u'{}  ---  {}  |  {:>8,}.00 {}'.format(start, end, tooal_price, currency)
 
 
 if __name__ == '__main__':
