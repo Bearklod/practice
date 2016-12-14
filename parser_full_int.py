@@ -8,6 +8,7 @@ This modul receives flights table and returns data for all flights
 import requests
 from lxml import html
 from datetime import datetime
+from datetime import timedelta
 
 class Parser(object):
 
@@ -103,11 +104,11 @@ class Parser(object):
             return data
         flight_date = datetime.strptime(data, '%d.%m.%Y')
         today = datetime.today()
+        max_date = today + timedelta(days=298)
         if flight_date.date() < today.date():
             raise Exception("You enter wrong date. We can't return back")
-        if int(flight_date.strftime('%Y')) < 2016 or \
-                        int(flight_date.strftime('%Y')) > 2017:
-            raise Exception("Wrong date!")
+        elif flight_date.date() > max_date.date():
+            raise Exception("You enter wrong date. Out of range")
         return str(flight_date.date())
 
     def find_data(self):
