@@ -1,6 +1,5 @@
 #-*- coding: utf-8 -*-;
-"""Interactive version of Parser_full.py.
-Parser for site: /www.flyniki.com/.
+"""Parser for site: /www.flyniki.com/.
 Parser() -- main class
 This modul receives flights table and returns data for all flights
 """
@@ -133,30 +132,64 @@ class Parser(object):
         This method get each value of the first table and inserts
         for each value of the second table.
         """
-        if not self.return_date:
-            raise Exception('return data not found')
-        url = self.get_full_url().url
         page = html.fromstring(self.get_page())
         self.check_for_errors(page)
+        price = self.extract_prices(page)
+        if self.oneway:
+            self.print_oneway(price)
+        else:
+            self.get_combined_prices(price)
+
+    def extract_prices(self, page):
+        """thos func get data from all tables on the site"""
         tables = page.xpath('//div[@id="flighttables"][@class="clearfix"]/div')[::2]
-        row_first_table = tables[0].xpath('.//tbody/tr[contains(@class, "flightrow")]')
-        row_second_table = tables[1].xpath('.//tbody/tr[contains(@class, "flightrow")]')
         currency = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
-        for data in row_first_table:
-            f_prices = data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()')
-            for first_price in f_prices:
-                start = ' - '.join(data.xpath('.//time/text()'))
-                for data in row_second_table:
-                    s_prices = data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()')
-                    for second_prices in s_prices:
-                        end = ' - '.join(data.xpath('.//time/text()'))
-                        tooal_price = int(''.join(first_price[:-3].split(','))) + int(''.join(second_prices[:-3].split(',')))
-                        print u'{}  ---  {}  |  {:>8,}.00 {}'.format(start, end, tooal_price, currency)
+        outbound_prices = {}
+        inbound_prices = {}
+        for ind, table in enumerate(tables):
+            row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
+            for no, data in enumerate(row):
+                time = ' - '.join(data.xpath('.//time/text()'))
+                prices = data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()')
+                if not ind:
+                    outbound_prices[no] = {
+                        'time': time,
+                        'price': prices,
+                        'currency' : currency
+                        }
+                else:
+                    inbound_prices[no] = {
+                        'time': time,
+                        'price': prices,
+                        'currency' : currency
+                    }
+        return outbound_prices, inbound_prices
+
+    def print_oneway(self, prices):
+        """Return prices from oneway"""
+        for key in prices[0]:
+            print u'{} --- {}{}'.format(prices[0][key]['time'],
+                                        ', '.join(prices[0][key]['price']),
+                                        prices[0][key]['currency'])
+
+    def get_combined_prices(self, prices):
+        """Return sum of outbound_prices, inbound_prices"""
+        for outbound in prices[0]:
+            for i in prices[0][outbound]['price']:
+                for inbound in prices[1]:
+                    for j in prices[1][inbound]['price']:
+                        print u'{} --- {} | {:.2f}{}'.format(prices[0][outbound]['time'],
+                                                             prices[1][inbound]['time'],
+                                                             float(''.join(i.split(','))) + float(''.join(j.split(','))),
+                                                             prices[0][outbound]['currency'])
+
+
+
 
 
 if __name__ == '__main__':
     E_1 = Parser()
-    E_1.find_data()
+    # E_1.find_data()
     E_1.all_price()
 
 
