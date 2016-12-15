@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-;
+# -*- coding: utf-8 -*-;
 """Parser for site: /www.flyniki.com/.
 Parser() -- main class
 This modul receives flights table and returns data for all flights
@@ -8,6 +8,7 @@ import requests
 from lxml import html
 from datetime import datetime
 from datetime import timedelta
+
 
 class Parser(object):
 
@@ -23,7 +24,7 @@ class Parser(object):
     __init__
     get_page -- get html page.
     get_full_url -- make first request to www.flyniki.com.
-    get_sesid -- get session ID for final request.
+    get_ses_id -- get session ID for final request.
     set_ajax -- The final request for the page.
     find_data -- main func in class.
     """
@@ -40,7 +41,8 @@ class Parser(object):
 
     def get_page(self):
         """
-        This func check data format and return html page from final request: set_ajax()
+        This func check data format and return
+        html page from final request: set_ajax()
         """
         self.outbound_date = self.date_error_checker(self.outbound_date)
         if self.return_date == '':
@@ -66,7 +68,7 @@ class Parser(object):
                   'infantCount': '0'}
         return self.SESSION.get(url, params=params)
 
-    def get_sesid(self):
+    def get_ses_id(self):
         """Return url for final request snd session ID into SESSION"""
         url = 'http://www.flyniki.com/static/site/loader/' \
               'nl,js:nzf,jquery%7Cjquery.flightdatepickers,' \
@@ -76,29 +78,33 @@ class Parser(object):
     def set_ajax(self):
         """ This final func makes post request and send data."""
         self.oneway = '' if not self.oneway else 'on'
-        data = {'_ajax[templates][]' : ['main', 'priceoverview',
-                                        'infos', 'flightinfo'],
-                '_ajax[requestParams][departure]' : self.departure,
-                '_ajax[requestParams][destination]' : self.destination,
-                '_ajax[requestParams][returnDeparture]' : '',
-                '_ajax[requestParams][returnDestination]' : '',
-                '_ajax[requestParams][outboundDate]' : self.outbound_date,
-                '_ajax[requestParams][returnDate]' : self.return_date,
-                '_ajax[requestParams][adultCount]' : '1',
-                '_ajax[requestParams][childCount]' : '0',
-                '_ajax[requestParams][infantCount]' : '0',
-                '_ajax[requestParams][openDateOverview]' : '',
-                '_ajax[requestParams][oneway]' : self.oneway}
+        data = {'_ajax[templates][]': ['main', 'priceoverview', 'infos', 'flightinfo'],
+                '_ajax[requestParams][departure]': self.departure,
+                '_ajax[requestParams][destination]': self.destination,
+                '_ajax[requestParams][returnDeparture]': '',
+                '_ajax[requestParams][returnDestination]': '',
+                '_ajax[requestParams][outboundDate]': self.outbound_date,
+                '_ajax[requestParams][returnDate]': self.return_date,
+                '_ajax[requestParams][adultCount]': '1',
+                '_ajax[requestParams][childCount]': '0',
+                '_ajax[requestParams][infantCount]': '0',
+                '_ajax[requestParams][openDateOverview]': '',
+                '_ajax[requestParams][oneway]': self.oneway}
         response = self.SESSION.post(self.get_full_url().url, data=data)
         return response.content.replace('\\', '')
 
-    def check_for_errors(self, page):
+    @staticmethod
+    def check_for_errors(page):
         errors = page.xpath('//span[@class="debugerrors"]/text()')
         if errors:
             raise Exception('Wrong ' + errors[0][1:-1] + '. Please correct your entry.')
 
-    def date_error_checker(self, data):
-    	"""This func check the date on the error and return correct one for request"""
+    @staticmethod
+    def date_error_checker(data):
+        """
+        This func check the date on the error
+        and return correct one for request
+        """
         if len(data.split('.')) == 1:
             return data
         flight_date = datetime.strptime(data, '%d.%m.%Y')
@@ -140,8 +146,9 @@ class Parser(object):
         else:
             self.get_combined_prices(price)
 
-    def extract_prices(self, page):
-        """thos func get data from all tables on the site"""
+    @staticmethod
+    def extract_prices(page):
+        """this func get data from all tables on the site"""
         tables = page.xpath('//div[@id="flighttables"][@class="clearfix"]/div')[::2]
         currency = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
         outbound_prices = {}
@@ -155,24 +162,26 @@ class Parser(object):
                     outbound_prices[no] = {
                         'time': time,
                         'price': prices,
-                        'currency' : currency
+                        'currency': currency
                         }
                 else:
                     inbound_prices[no] = {
                         'time': time,
                         'price': prices,
-                        'currency' : currency
+                        'currency': currency
                     }
         return outbound_prices, inbound_prices
 
-    def print_oneway(self, prices):
+    @staticmethod
+    def print_oneway(prices):
         """Return prices from oneway"""
         for key in prices[0]:
             print u'{} --- {}{}'.format(prices[0][key]['time'],
                                         ', '.join(prices[0][key]['price']),
                                         prices[0][key]['currency'])
 
-    def get_combined_prices(self, prices):
+    @staticmethod
+    def get_combined_prices(prices):
         """Return sum of outbound_prices, inbound_prices"""
         for outbound in prices[0]:
             for i in prices[0][outbound]['price']:
@@ -184,12 +193,7 @@ class Parser(object):
                                                              prices[0][outbound]['currency'])
 
 
-
-
-
 if __name__ == '__main__':
     E_1 = Parser()
     # E_1.find_data()
     E_1.all_price()
-
-
