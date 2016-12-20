@@ -4,6 +4,7 @@ Parser() -- main class
 This modul receives flights table and returns data for all flights
 """
 
+import re
 import requests
 from lxml import html
 from datetime import datetime
@@ -45,7 +46,7 @@ class Parser(object):
 
     def check_IATA(self, IATA):
         """ check_IATA codes"""
-        if IATA.isalpha() and len(IATA) == 3:
+        if re.match(r'^[a-z]{3}$', IATA, re.IGNORECASE):
             return IATA
         else:
             raise Exception('Wrong IATA code')
