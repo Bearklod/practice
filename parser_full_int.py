@@ -33,8 +33,8 @@ class Parser(object):
 
     def __init__(self):
         """ The class constructor has 4 args entered from the keyboard"""
-        self.departure = raw_input('Departure plase (IATA code): ')
-        self.destination = raw_input('Destination plase (IATA code): ')
+        self.departure = self.check_IATA(raw_input('Departure plase (IATA code): '))
+        self.destination = self.check_IATA(raw_input('Destination plase (IATA code): '))
         self.outbound_date = self.date_error_checker(raw_input('Departure date (day.month.year): '))
         self.return_date = raw_input('Return date (day.month.year): ')
         if self.return_date == '':
@@ -42,6 +42,13 @@ class Parser(object):
             self.return_date = self.outbound_date
         else:
             self.return_date = self.date_error_checker(self.return_date)
+
+    def check_IATA(self, IATA):
+        """ check_IATA codes"""
+        if IATA.isalpha() and len(IATA) == 3:
+            return IATA
+        else:
+            raise Exception('Wrong IATA code')
 
     def get_full_url(self):
         """
