@@ -25,8 +25,7 @@ class Parser(object):
     get_page -- get html page.
     get_full_url -- make first request to www.flyniki.com.
     get_ses_id -- get session ID for final request.
-    set_ajax -- The final request for the page.
-    find_data -- main func in class.
+    all_price -- main func in class.
     """
 
     oneway = 0
@@ -34,23 +33,15 @@ class Parser(object):
 
     def __init__(self):
         """ The class constructor has 4 args entered from the keyboard"""
-        self.departure = str(raw_input('Departure plase: '))
-        self.destination = str(raw_input('Destination plase: '))
-        self.outbound_date = str(raw_input('Departure date: '))
-        self.return_date = str(raw_input('Return date: '))
-
-    def get_page(self):
-        """
-        This func check data format and return
-        html page from final request: set_ajax()
-        """
-        self.outbound_date = self.date_error_checker(self.outbound_date)
+        self.departure = raw_input('Departure plase (IATA code): ')
+        self.destination = raw_input('Destination plase (IATA code): ')
+        self.outbound_date = self.date_error_checker(raw_input('Departure date (day.month.year): '))
+        self.return_date = raw_input('Return date (day.month.year): ')
         if self.return_date == '':
             self.oneway = 1
             self.return_date = self.outbound_date
         else:
             self.return_date = self.date_error_checker(self.return_date)
-        return self.set_ajax()
 
     def get_full_url(self):
         """
@@ -75,8 +66,8 @@ class Parser(object):
               'jquery%7Cjquery.fancybox.js'
         return self.SESSION.head(url)
 
-    def set_ajax(self):
-        """ This final func makes post request and send data."""
+    def get_page(self):
+        """ This final func makes post request and send ajax data."""
         self.oneway = '' if not self.oneway else 'on'
         data = {'_ajax[templates][]': ['main', 'priceoverview', 'infos', 'flightinfo'],
                 '_ajax[requestParams][departure]': self.departure,
@@ -98,6 +89,9 @@ class Parser(object):
         errors = page.xpath('//span[@class="debugerrors"]/text()')
         if errors:
             raise Exception('Wrong ' + errors[0][1:-1] + '. Please correct your entry.')
+        elif page.xpath('//div[@id="flighttables"][@class="clearfix"]/div') == []:
+            raise Exception('No connections found for the entered data.')
+        return page
 
     @staticmethod
     def date_error_checker(data):
@@ -105,33 +99,14 @@ class Parser(object):
         This func check the date on the error
         and return correct one for request
         """
-        if len(data.split('.')) == 1:
-            return data
         flight_date = datetime.strptime(data, '%d.%m.%Y')
         today = datetime.today()
         max_date = today + timedelta(days=298)
         if flight_date.date() < today.date():
             raise Exception("You enter wrong date. We can't return back")
         elif flight_date.date() > max_date.date():
-            raise Exception("You enter wrong date. Out of range")
-        return str(flight_date.date())
-
-    def find_data(self):
-        """ This func find data in html page."""
-        page = html.fromstring(self.get_page())
-        self.check_for_errors(page)
-        tables = page.xpath('//div[@id="flighttables"][@class="clearfix"]/div')
-        tables = tables[::2] if not self.oneway else tables[::3]
-        currency = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
-        for table in tables:
-            row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
-            print table.xpath('.//div[@class="vacancy_route"]/text()')[0]
-            for data in row:
-                start_end = ' - '.join(data.xpath('.//time/text()'))
-                flight_time = data.xpath('.//span[contains(@id, "flightDurationFi_")]/text()')[0]
-                price = (data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()'))
-                print start_end, flight_time, ' - '.join(price), currency
-            print ''
+            raise Exception("There are no tickets on this day. Please use an earlier date")
+        return flight_date.date()
 
     def all_price(self):
         """ all_price()
@@ -142,7 +117,7 @@ class Parser(object):
         self.check_for_errors(page)
         price = self.extract_prices(page)
         if self.oneway:
-            self.print_oneway(price)
+            self.print_oneway(price['outbound'])
         else:
             self.get_combined_prices(price)
 
@@ -150,50 +125,47 @@ class Parser(object):
     def extract_prices(page):
         """this func get data from all tables on the site"""
         tables = page.xpath('//div[@id="flighttables"][@class="clearfix"]/div')[::2]
-        currency = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-ECO_FLEX")]/text()')[0]
-        outbound_prices = {}
-        inbound_prices = {}
+        currency = tables[0].xpath('.//th[contains(@id, "flight-table-header-price-")]/text()')[0]
+        all_prices = {'outbound': [], 'inbound': []}
+
         for ind, table in enumerate(tables):
             row = table.xpath('.//tbody/tr[contains(@class, "flightrow")]')
-            for no, data in enumerate(row):
+            for data in row:
                 time = ' - '.join(data.xpath('.//time/text()'))
                 prices = data.xpath('.//div[@class="lowest"]/span[contains(@id, "price")]/text()')
                 if not ind:
-                    outbound_prices[no] = {
+                    all_prices['outbound'].append({
                         'time': time,
                         'price': prices,
                         'currency': currency
-                        }
+                        })
                 else:
-                    inbound_prices[no] = {
+                    all_prices['inbound'].append({
                         'time': time,
                         'price': prices,
                         'currency': currency
-                    }
-        return outbound_prices, inbound_prices
+                        })
+        return all_prices
 
     @staticmethod
     def print_oneway(prices):
         """Return prices from oneway"""
-        for key in prices[0]:
-            print u'{} --- {}{}'.format(prices[0][key]['time'],
-                                        ', '.join(prices[0][key]['price']),
-                                        prices[0][key]['currency'])
+        for price in prices:
+            print u'{} --- {} {}'.format(price['time'], ' - '.join(price['price']), price['currency'])
 
     @staticmethod
     def get_combined_prices(prices):
         """Return sum of outbound_prices, inbound_prices"""
-        for outbound in prices[0]:
-            for i in prices[0][outbound]['price']:
-                for inbound in prices[1]:
-                    for j in prices[1][inbound]['price']:
-                        print u'{} --- {} | {:.2f}{}'.format(prices[0][outbound]['time'],
-                                                             prices[1][inbound]['time'],
-                                                             float(''.join(i.split(','))) + float(''.join(j.split(','))),
-                                                             prices[0][outbound]['currency'])
+        for out_flight in prices['outbound']:
+            for out_price in out_flight['price']:
+                for in_flight in prices['inbound']:
+                    for in_price in in_flight['price']:
+                        print u'{} --- {}  |  {:.2f} {}'.format(out_flight['time'], in_flight['time'],
+                                                                float(''.join(out_price.split(','))) +
+                                                                float(''.join(in_price.split(','))),
+                                                                in_flight['currency'])
 
 
 if __name__ == '__main__':
     E_1 = Parser()
-    # E_1.find_data()
     E_1.all_price()
