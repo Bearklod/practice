@@ -23,7 +23,7 @@ class Parser(object):
     Functions:
     __init__
     get_search_results -- get html page.
-    get_full_url -- make first request to www.flyniki.com.
+    send_first_request -- make first request to www.flyniki.com.
     get_ses_id -- get session ID for final request.
     all_price -- main func in class.
     """
@@ -50,7 +50,7 @@ class Parser(object):
         else:
             raise Exception('Wrong IATA code')
 
-    def get_full_url(self):
+    def send_first_request(self):
         """
         hit func makes first get request with params to www.flyniki.com
         """
@@ -88,7 +88,7 @@ class Parser(object):
                 '_ajax[requestParams][infantCount]': '0',
                 '_ajax[requestParams][openDateOverview]': '',
                 '_ajax[requestParams][oneway]': self.oneway}
-        response = self.SESSION.post(self.get_full_url().url, data=data)
+        response = self.SESSION.post(self.send_first_request().url, data=data)
         return response.content.replace('\\', '')
 
     @staticmethod
