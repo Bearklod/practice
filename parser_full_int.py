@@ -7,8 +7,7 @@ This modul receives flights table and returns data for all flights
 import re
 import requests
 from lxml import html
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 
 class Parser(object):
@@ -23,7 +22,7 @@ class Parser(object):
     return_date -- (default '').
     Functions:
     __init__
-    get_page -- get html page.
+    get_search_results -- get html page.
     get_full_url -- make first request to www.flyniki.com.
     get_ses_id -- get session ID for final request.
     all_price -- main func in class.
@@ -74,7 +73,7 @@ class Parser(object):
               'jquery%7Cjquery.fancybox.js'
         return self.SESSION.head(url)
 
-    def get_page(self):
+    def get_search_results(self):
         """ This final func makes post request and send ajax data."""
         self.oneway = '' if not self.oneway else 'on'
         data = {'_ajax[templates][]': ['main', 'priceoverview', 'infos', 'flightinfo'],
@@ -116,12 +115,12 @@ class Parser(object):
             raise Exception("There are no tickets on this day. Please use an earlier date")
         return flight_date.date()
 
-    def all_price(self):
-        """ all_price()
+    def get_fare_info(self):
+        """ get_fare_info()
         This method get each value of the first table and inserts
         for each value of the second table.
         """
-        page = html.fromstring(self.get_page())
+        page = html.fromstring(self.get_search_results())
         self.check_for_errors(page)
         price = self.extract_prices(page)
         if self.oneway:
@@ -176,4 +175,4 @@ class Parser(object):
 
 if __name__ == '__main__':
     E_1 = Parser()
-    E_1.all_price()
+    E_1.get_fare_info()
