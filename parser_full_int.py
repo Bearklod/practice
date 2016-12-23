@@ -25,7 +25,7 @@ class Parser(object):
     get_search_results -- get html page.
     send_first_request -- make first request to www.flyniki.com.
     get_ses_id -- get session ID for final request.
-    all_price -- main func in class.
+    get_fare_info -- main func in class.
     """
 
     oneway = 0
