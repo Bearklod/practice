@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-;
-"""Parser for site: /www.flyniki.com/.
+"""Parser for site: /www.flyniki.com/. 
 Parser() -- main class
 This modul receives flights table and returns data for all flights
 """
